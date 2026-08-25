@@ -21,12 +21,12 @@ NOTICE_LABELS = {
 
 def _backend() -> str:
     settings = get_settings()
-    if settings.BREVO_API_KEY.strip():
-        return "brevo"
+    if settings.SENDGRID_API_KEY.strip():
+        return "sendgrid"
     if settings.RESEND_API_KEY.strip():
         return "resend"
-    if settings.EMAIL_BACKEND == "brevo":
-        return "brevo"
+    if settings.EMAIL_BACKEND == "sendgrid":
+        return "sendgrid"
     if settings.EMAIL_BACKEND == "resend":
         return "resend"
     if settings.EMAIL_BACKEND == "console":
@@ -48,7 +48,7 @@ def _render(subject: str, to: str, body: str) -> str:
 
 
 async def send_email(to: str, subject: str, body: str) -> bool:
-    """Send an email via the configured backend (Brevo, Resend, SMTP, or console).
+    """Send an email via the configured backend (SendGrid, Resend, SMTP, or console).
     Catches all exceptions, logs safely, and never crashes the caller transaction."""
     if not to or not to.strip():
         logger.warning("send_email called with empty recipient address.")
@@ -57,8 +57,8 @@ async def send_email(to: str, subject: str, body: str) -> bool:
     to_addr = to.strip().lower()
     backend = _backend()
     try:
-        if backend == "brevo":
-            await _send_brevo(to_addr, subject, body)
+        if backend == "sendgrid":
+            await _send_sendgrid(to_addr, subject, body)
         elif backend == "resend":
             await _send_resend(to_addr, subject, body)
         elif backend == "smtp":
@@ -72,29 +72,30 @@ async def send_email(to: str, subject: str, body: str) -> bool:
         return False
 
 
-async def _send_brevo(to: str, subject: str, body: str) -> None:
+async def _send_sendgrid(to: str, subject: str, body: str) -> None:
     import httpx
 
     settings = get_settings()
-    sender_email = settings.SMTP_FROM_EMAIL.strip() or "hasibshaikh583@gmail.com"
+    from_email = settings.SMTP_FROM_EMAIL.strip() or settings.effective_smtp_username or "hasibshaikh583@gmail.com"
+    from_name = "SmartSkale System"
 
     async with httpx.AsyncClient(timeout=10.0) as client:
+        payload = {
+            "personalizations": [{"to": [{"email": to}]}],
+            "from": {"email": from_email, "name": from_name},
+            "subject": subject,
+            "content": [{"type": "text/plain", "value": body}],
+        }
         resp = await client.post(
-            "https://api.brevo.com/v3/smtp/email",
+            "https://api.sendgrid.com/v3/mail/send",
             headers={
-                "api-key": settings.BREVO_API_KEY.strip(),
+                "Authorization": f"Bearer {settings.SENDGRID_API_KEY.strip()}",
                 "Content-Type": "application/json",
-                "Accept": "application/json",
             },
-            json={
-                "sender": {"name": "SmartSkale", "email": sender_email},
-                "to": [{"email": to}],
-                "subject": subject,
-                "textContent": body,
-            },
+            json=payload,
         )
         if resp.status_code >= 400:
-            raise RuntimeError(f"Brevo API returned status {resp.status_code}: {resp.text}")
+            raise RuntimeError(f"SendGrid API error ({resp.status_code}): {resp.text}")
 
 
 async def _send_resend(to: str, subject: str, body: str) -> None:

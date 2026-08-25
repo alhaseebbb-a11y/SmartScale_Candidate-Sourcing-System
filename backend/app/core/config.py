@@ -50,9 +50,9 @@ class Settings(BaseSettings):
     AWS_S3_BUCKET_NAME: str = ""
 
     RESEND_API_KEY: str = ""
-    BREVO_API_KEY: str = ""
+    SENDGRID_API_KEY: str = ""
 
-    EMAIL_BACKEND: str = "auto"  # auto | resend | brevo | smtp | console
+    EMAIL_BACKEND: str = "auto"  # auto | sendgrid | resend | smtp | console
     SMTP_HOST: str = ""
     SMTP_PORT: int = 587
     SMTP_USER: str = ""
