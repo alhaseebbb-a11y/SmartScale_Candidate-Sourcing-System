@@ -49,7 +49,9 @@ class Settings(BaseSettings):
     AWS_REGION: str = "us-east-1"
     AWS_S3_BUCKET_NAME: str = ""
 
-    EMAIL_BACKEND: str = "auto"  # auto | smtp | console
+    RESEND_API_KEY: str = ""
+
+    EMAIL_BACKEND: str = "auto"  # auto | resend | smtp | console
     SMTP_HOST: str = ""
     SMTP_PORT: int = 587
     SMTP_USER: str = ""

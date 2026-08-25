@@ -21,6 +21,10 @@ NOTICE_LABELS = {
 
 def _backend() -> str:
     settings = get_settings()
+    if settings.RESEND_API_KEY.strip():
+        return "resend"
+    if settings.EMAIL_BACKEND == "resend":
+        return "resend"
     if settings.EMAIL_BACKEND == "console":
         return "console"
     if settings.EMAIL_BACKEND == "smtp":
@@ -40,24 +44,53 @@ def _render(subject: str, to: str, body: str) -> str:
 
 
 async def send_email(to: str, subject: str, body: str) -> bool:
-    """Send an email via the configured backend (SMTP or console).
+    """Send an email via the configured backend (Resend, SMTP, or console).
     Catches all exceptions, logs safely, and never crashes the caller transaction."""
     if not to or not to.strip():
         logger.warning("send_email called with empty recipient address.")
         return False
 
     to_addr = to.strip().lower()
+    backend = _backend()
     try:
-        backend = _backend()
-        rendered = _render(subject, to_addr, body)
-        if backend == "smtp":
+        if backend == "resend":
+            await _send_resend(to_addr, subject, body)
+        elif backend == "smtp":
             await _send_smtp(to_addr, subject, body)
+        else:
+            logger.info("Email sent (console):\n%s", _render(subject, to_addr, body))
         logger.info("Email dispatched successfully to %s via %s.", to_addr, backend)
-        logger.info("Email sent:\n%s", rendered)
         return True
     except Exception as exc:
-        logger.error("Failed to send email to %s: %s", to_addr, str(exc))
+        logger.error("Failed to send email to %s via %s: %s", to_addr, backend, str(exc))
         return False
+
+
+async def _send_resend(to: str, subject: str, body: str) -> None:
+    import httpx
+
+    settings = get_settings()
+    from_email = settings.SMTP_FROM_EMAIL.strip() or "SmartSkale <onboarding@resend.dev>"
+    # Resend default testing sender if custom domain not verified yet
+    if not from_email or "@" not in from_email or from_email.endswith("@gmail.com"):
+        from_email = "SmartSkale <onboarding@resend.dev>"
+
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.post(
+            "https://api.resend.com/emails",
+            headers={
+                "Authorization": f"Bearer {settings.RESEND_API_KEY.strip()}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "from": from_email,
+                "to": [to],
+                "subject": subject,
+                "text": body,
+            },
+        )
+        if resp.status_code >= 400:
+            raise RuntimeError(f"Resend API returned status {resp.status_code}: {resp.text}")
 
 
 async def _send_smtp(to: str, subject: str, body: str) -> None:
