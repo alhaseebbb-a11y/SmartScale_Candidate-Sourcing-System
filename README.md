@@ -6,8 +6,8 @@ A production-grade, full-stack recruitment and candidate sourcing platform built
 
 ## 🚀 Live Deployments
 
-- **Frontend (Vercel):** [https://smart-scale-candidate-sourcing-syst.vercel.app/jobs](https://smart-scale-candidate-sourcing-syst.vercel.app/jobs) *(To be updated after deployment)*
-- **Backend API (Render):** [https://smartscale-candidate-sourcing-system.onrender.com/docs](https://smartscale-candidate-sourcing-system.onrender.com/docs) *(To be updated after deployment)*
+- **Frontend (Vercel):** [https://smart-scale-candidate-sourcing-syst.vercel.app/jobs](https://smart-scale-candidate-sourcing-syst.vercel.app/jobs) *(Check emails in Spam)*
+- **Backend API (Render):** [https://smartscale-candidate-sourcing-system.onrender.com/docs](https://smartscale-candidate-sourcing-system.onrender.com/docs) 
 - **Interactive API Docs (Swagger):** [https://smartscale-candidate-sourcing-system.onrender.com/docs](https://smartscale-candidate-sourcing-system.onrender.com/docs)
 
 ---
