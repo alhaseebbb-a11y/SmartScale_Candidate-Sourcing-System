@@ -39,7 +39,7 @@ export class ErrorBoundary extends Component<Props, State> {
           boxSizing: 'border-box' as const,
         }}>
           <h1 style={{ color: '#cc0000', fontSize: '24px', marginBottom: '16px' }}>
-            APPLICATION ERROR — ROOT CAUSE VISIBLE BELOW
+            APPLICATION ERROR â€” ROOT CAUSE VISIBLE BELOW
           </h1>
           <div style={{ background: '#fff', border: '2px solid #cc0000', borderRadius: '8px', padding: '20px', marginBottom: '24px' }}>
             <h2 style={{ color: '#333', fontSize: '18px', marginBottom: '8px' }}>Error Message</h2>

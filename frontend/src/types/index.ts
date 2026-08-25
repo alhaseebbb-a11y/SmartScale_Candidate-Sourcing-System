@@ -133,6 +133,11 @@ export interface WorkExperience {
   created_at: string
 }
 
+export interface ExperienceSummary {
+  total_months: number
+  total_years: number
+}
+
 export interface CandidateProfile {
   id: UUID
   user_id: UUID
@@ -145,12 +150,13 @@ export interface CandidateProfile {
   current_company: string | null
   notice_period: NoticePeriod | null
   current_address: string | null
-  photo_url: string | null
-  total_experience_months: number
-  fresher: boolean
-  educations: Education[]
-  experiences: WorkExperience[]
-  created_at: string
+  photo_path?: string | null
+  photo_url?: string | null
+  total_experience_months?: number
+  fresher?: boolean
+  educations?: Education[]
+  experiences?: WorkExperience[]
+  created_at?: string
   updated_at: string
 }
 

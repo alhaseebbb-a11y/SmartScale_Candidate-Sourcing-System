@@ -52,7 +52,7 @@ const educationSchema = z.object({
   institution: z.string().min(1, 'School / Institution is required'),
   board: z.string().optional(),
   stream: z.string().optional(),
-  year_of_passing: z.number({ invalid_type_error: 'Year of passing is required' })
+  year_of_passing: z.number({ message: 'Year of passing is required' })
     .min(1950, 'Year must be 1950 or later')
     .max(new Date().getFullYear() + 5, 'Year cannot be in the future'),
   grade: z.string().optional(),
@@ -65,7 +65,7 @@ const experienceSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   start_date: z.string().min(1, 'Start date is required'),
   end_date: z.string().nullable().optional(),
-  currently_working: z.boolean().default(false),
+  currently_working: z.boolean(),
   responsibilities: z.string().optional(),
 })
 
@@ -337,7 +337,7 @@ export function CandidateProfile() {
 
     try {
       setIsSavingExperience(true)
-      const promises = items.map((item) => {
+      const promises = items.map((item: ExperienceForm) => {
         const payload: Omit<WorkExperience, 'id' | 'created_at'> = {
           company: item.company.trim(),
           title: item.title.trim(),

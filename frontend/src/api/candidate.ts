@@ -1,5 +1,5 @@
 import api from './axiosInstance'
-import type { CandidateProfile, Education, WorkExperience, Application, ApplicationListResponse, ApplicationSubmit, ApplicationSubmitProfile, ApplicationSubmitEducation, ApplicationSubmitExperience } from '../types'
+import type { CandidateProfile, Education, WorkExperience, ExperienceSummary, Application, ApplicationListResponse, ApplicationSubmit, ApplicationSubmitProfile, ApplicationSubmitEducation, ApplicationSubmitExperience } from '../types'
 
 export const candidateApi = {
   getProfile: async (): Promise<CandidateProfile> => {
@@ -21,7 +21,7 @@ export const candidateApi = {
     return response.data
   },
 
-  getExperienceSummary: async (): Promise<{ total_experience_months: number; fresher: boolean }> => {
+  getExperienceSummary: async (): Promise<ExperienceSummary> => {
     const response = await api.get('/candidate/experience-summary')
     return response.data
   },
