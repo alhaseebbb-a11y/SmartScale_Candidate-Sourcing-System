@@ -83,11 +83,14 @@ class Settings(BaseSettings):
 
     @property
     def effective_cors_origins(self) -> list[str]:
+        origins = []
         if isinstance(self.CORS_ORIGINS, list):
-            return self.CORS_ORIGINS
-        if isinstance(self.CORS_ORIGINS, str):
-            return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
-        return ["http://localhost:5173", "http://localhost:3000"]
+            origins.extend(self.CORS_ORIGINS)
+        elif isinstance(self.CORS_ORIGINS, str):
+            origins.extend([o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()])
+        if self.effective_frontend_url and self.effective_frontend_url not in origins:
+            origins.append(self.effective_frontend_url)
+        return origins or ["http://localhost:5173", "http://localhost:3000"]
 
     @property
     def effective_frontend_url(self) -> str:
