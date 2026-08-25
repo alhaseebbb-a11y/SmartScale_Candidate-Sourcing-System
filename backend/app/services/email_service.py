@@ -21,8 +21,12 @@ NOTICE_LABELS = {
 
 def _backend() -> str:
     settings = get_settings()
+    if settings.BREVO_API_KEY.strip():
+        return "brevo"
     if settings.RESEND_API_KEY.strip():
         return "resend"
+    if settings.EMAIL_BACKEND == "brevo":
+        return "brevo"
     if settings.EMAIL_BACKEND == "resend":
         return "resend"
     if settings.EMAIL_BACKEND == "console":
@@ -44,7 +48,7 @@ def _render(subject: str, to: str, body: str) -> str:
 
 
 async def send_email(to: str, subject: str, body: str) -> bool:
-    """Send an email via the configured backend (Resend, SMTP, or console).
+    """Send an email via the configured backend (Brevo, Resend, SMTP, or console).
     Catches all exceptions, logs safely, and never crashes the caller transaction."""
     if not to or not to.strip():
         logger.warning("send_email called with empty recipient address.")
@@ -53,7 +57,9 @@ async def send_email(to: str, subject: str, body: str) -> bool:
     to_addr = to.strip().lower()
     backend = _backend()
     try:
-        if backend == "resend":
+        if backend == "brevo":
+            await _send_brevo(to_addr, subject, body)
+        elif backend == "resend":
             await _send_resend(to_addr, subject, body)
         elif backend == "smtp":
             await _send_smtp(to_addr, subject, body)
@@ -64,6 +70,31 @@ async def send_email(to: str, subject: str, body: str) -> bool:
     except Exception as exc:
         logger.error("Failed to send email to %s via %s: %s", to_addr, backend, str(exc))
         return False
+
+
+async def _send_brevo(to: str, subject: str, body: str) -> None:
+    import httpx
+
+    settings = get_settings()
+    sender_email = settings.SMTP_FROM_EMAIL.strip() or "hasibshaikh583@gmail.com"
+
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.post(
+            "https://api.brevo.com/v3/smtp/email",
+            headers={
+                "api-key": settings.BREVO_API_KEY.strip(),
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+            },
+            json={
+                "sender": {"name": "SmartSkale", "email": sender_email},
+                "to": [{"email": to}],
+                "subject": subject,
+                "textContent": body,
+            },
+        )
+        if resp.status_code >= 400:
+            raise RuntimeError(f"Brevo API returned status {resp.status_code}: {resp.text}")
 
 
 async def _send_resend(to: str, subject: str, body: str) -> None:
