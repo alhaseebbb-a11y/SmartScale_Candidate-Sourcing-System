@@ -76,13 +76,45 @@ def _send_smtp_sync(message: EmailMessage) -> None:
     settings = get_settings()
     username = settings.effective_smtp_username
     password = settings.SMTP_PASSWORD
+    host = settings.SMTP_HOST or "smtp.gmail.com"
+    port = settings.SMTP_PORT or 587
 
-    with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=20) as server:
-        if settings.SMTP_USE_TLS:
-            server.starttls()
-        if username and password:
-            server.login(username, password)
-        server.send_message(message)
+    # Attempt 1: Configured port & protocol
+    try:
+        if port == 465:
+            with smtplib.SMTP_SSL(host, port, timeout=10) as server:
+                if username and password:
+                    server.login(username, password)
+                server.send_message(message)
+                return
+        else:
+            with smtplib.SMTP(host, port, timeout=10) as server:
+                if settings.SMTP_USE_TLS:
+                    server.starttls()
+                if username and password:
+                    server.login(username, password)
+                server.send_message(message)
+                return
+    except Exception as exc:
+        logger.warning("Primary SMTP attempt on %s:%s failed (%s). Attempting fallback...", host, port, exc)
+
+    # Attempt 2: Resilient fallback (SSL on port 465 or STARTTLS on 587)
+    fallback_port = 465 if port != 465 else 587
+    try:
+        if fallback_port == 465:
+            with smtplib.SMTP_SSL(host, fallback_port, timeout=10) as server:
+                if username and password:
+                    server.login(username, password)
+                server.send_message(message)
+        else:
+            with smtplib.SMTP(host, fallback_port, timeout=10) as server:
+                server.starttls()
+                if username and password:
+                    server.login(username, password)
+                server.send_message(message)
+    except Exception as fallback_exc:
+        logger.error("All SMTP connection attempts failed. Last error: %s", fallback_exc)
+        raise fallback_exc
 
 
 def application_confirmation_email(
